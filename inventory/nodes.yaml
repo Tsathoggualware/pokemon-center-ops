@@ -1,0 +1,49 @@
+host:
+  name: evee
+  role: infra
+  environment: prod
+
+hardware:
+  disks:
+    primary: /dev/nvme0n1
+  nics:
+    uplink:
+      mac: "8c:16:45:fa:7c:ca"
+      iface_hint: eno2
+
+network:
+  uplink:
+    dhcp: true
+  bridges:
+    - name: br0
+      type: linux-bridge
+      attached_to: uplink
+
+dns:
+  mode: authoritative
+  provider: technitium
+  listen:
+    - br0
+    - lo
+
+virtualization:
+  enabled: true
+  networks:
+    - br0
+    - isolated
+
+vms:
+  technitium-dns:
+    autostart: true
+    memory: 2048
+    vcpus: 2
+    disks:
+      - size_gb: 20
+    networks:
+      - br0
+
+installer:
+  disk: /dev/nvme0n1
+  hostname: evee
+  timezone: UTC
+  locale: en_US.UTF-8
