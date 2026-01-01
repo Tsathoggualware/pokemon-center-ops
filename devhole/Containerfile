@@ -1,0 +1,47 @@
+# Use Arch Linux base image
+FROM archlinux:latest
+
+# Install glibc locales support
+RUN pacman -Sy --noconfirm glibc
+
+# Enable locale
+RUN sed -i 's/^#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
+    locale-gen
+
+# Avoid interactive prompts
+ENV TERM xterm
+ENV LANG en_US.UTF-8
+ENV LC_ALL en_US.UTF-8
+
+# Install base-devel and essential tools
+RUN pacman -Syu --noconfirm && \
+    pacman -S --noconfirm base-devel git sudo bash-completion \
+    iproute2 iputils openssh vim curl wget jq
+
+# Install Kubernetes tools from Arch repos or AUR helper (here from repos where possible)
+RUN pacman -S --noconfirm kubectl kubeadm helm
+
+# Install Podman and libvirt client tools
+RUN pacman -S --noconfirm podman libvirt qemu
+
+# Install paru (AUR helper) - clone, build, and install as tsathoggualware
+RUN useradd -m tsathoggualware && \
+    echo "tsathoggualware ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/tsathoggualware && chmod 0440 /etc/sudoers.d/tsathoggualware && \
+    su - tsathoggualware -c "git clone https://aur.archlinux.org/paru.git /home/tsathoggualware/paru && \
+    cd /home/tsathoggualware/paru && \
+    makepkg -si --noconfirm"
+
+# Install packer, opentofu, ansible, keepassxc
+RUN paru -Syu --noconfirm && \
+    paru -S --noconfirm packer opentofu ansible keepassxc
+
+# Switch to non-root user by default
+USER tsathoggualware
+WORKDIR /home/tsathoggualware
+
+# Install OCI CLI using the official Oracle install script
+RUN  bash -c "$(curl -L https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh)" \
+    ./install.sh --accept-all-defaults
+
+# Set bash as default shell
+CMD ["/bin/bash"]
