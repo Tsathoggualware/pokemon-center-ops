@@ -1,0 +1,32 @@
+<%#
+  name: ArchInstall Base
+  kind: provision
+  # This template provisions an Arch Linux system using archinstall.
+  # It expects a host parameter called 'archinstall_config_url' pointing to
+  # a JSON file hosted on GitHub (or another HTTP service) that defines
+  # the installation settings. See provisioning/arch/install_configs/ in
+  # your repository for examples.
+%>
+
+#!/bin/bash
+
+# Abort on any error
+set -e
+
+# Fetch the Archinstall user configuration from the URL specified on the host
+ARCHINSTALL_CONFIG_URL="<%= @host.params['archinstall_config_url'] %>"
+
+if [ -z "$ARCHINSTALL_CONFIG_URL" ]; then
+  echo "No 'archinstall_config_url' parameter defined for this host."
+  echo "Please define a host or hostgroup parameter with the URL of the configuration JSON."
+  exit 1
+fi
+
+echo "Downloading Archinstall configuration from $ARCHINSTALL_CONFIG_URL..."
+curl -fsSL -o /tmp/archinstall.json "$ARCHINSTALL_CONFIG_URL"
+
+echo "Running archinstall with the provided configuration..."
+# --no-confirm prevents interactive prompts, ensuring a fully automated install
+archinstall --config /tmp/archinstall.json --no-confirm
+
+echo "Archinstall has completed."
